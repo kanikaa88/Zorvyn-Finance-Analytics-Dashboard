@@ -1,5 +1,8 @@
-// Centralized RBAC configuration
-// This makes the permission system extensible and maintainable
+/**
+ * Role-Based Access Control (RBAC) Configuration
+ * Centralized permission management for scalability and maintainability
+ * Supports three user roles with granular permissions
+ */
 
 const ROLES = {
   VIEWER: 'viewer',

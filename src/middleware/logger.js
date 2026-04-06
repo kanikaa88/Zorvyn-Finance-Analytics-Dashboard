@@ -1,7 +1,7 @@
 /**
- * Request logging middleware
- * Logs: method, URL, status code, response time
- * No external dependencies - uses built-in Node.js functionality
+ * Custom request logging middleware
+ * Captures: HTTP method, URL path, status code, response time
+ * Implementation: Uses Node.js built-in functionality without external logging libraries
  */
 const requestLogger = (req, res, next) => {
   const startTime = Date.now();
