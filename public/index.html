@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance Analytics Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+
+    .section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-bottom: 15px;
+      color: #555;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #666;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button.secondary {
+      background-color: #6c757d;
+    }
+
+    button.secondary:hover {
+      background-color: #545b62;
+    }
+
+    button.danger {
+      background-color: #dc3545;
+    }
+
+    button.danger:hover {
+      background-color: #c82333;
+    }
+
+    .response {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-left: 4px solid #007bff;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .response.error {
+      border-left-color: #dc3545;
+      background-color: #f8d7da;
+    }
+
+    .response.success {
+      border-left-color: #28a745;
+      background-color: #d4edda;
+    }
+
+    .auth-status {
+      text-align: center;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .auth-status.logged-in {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .auth-status.logged-out {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .record-item {
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border-left: 4px solid #007bff;
+    }
+
+    .record-item.expense {
+      border-left-color: #dc3545;
+    }
+
+    .record-item.income {
+      border-left-color: #28a745;
+    }
+
+    .budget-item {
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .budget-item.ok {
+      border-left: 4px solid #28a745;
+    }
+
+    .budget-item.warning {
+      border-left: 4px solid #ffc107;
+    }
+
+    .budget-item.exceeded {
+      border-left: 4px solid #dc3545;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Finance Analytics Dashboard</h1>
+
+    <div id="authStatus" class="auth-status logged-out">Not Logged In</div>
+
+    <!-- Auth Section -->
+    <div class="section" id="authSection">
+      <h2>Authentication</h2>
+      
+      <div class="form-group">
+        <label>Name (for registration only)</label>
+        <input type="text" id="authName" placeholder="John Doe">
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="user@example.com">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="authPassword" placeholder="password123">
+      </div>
+
+      <button onclick="register()">Register</button>
+      <button onclick="login()" class="secondary">Login</button>
+      <button onclick="logout()" class="danger">Logout</button>
+
+      <div id="authResponse" class="response hidden"></div>
+    </div>
+
+    <!-- Create Record Section -->
+    <div class="section hidden" id="recordSection">
+      <h2>Create Financial Record</h2>
+
+      <div class="form-group">
+        <label>Amount</label>
+        <input type="number" id="recordAmount" placeholder="100.00" step="0.01">
+      </div>
+
+      <div class="form-group">
+        <label>Type</label>
+        <select id="recordType">
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Category</label>
+        <input type="text" id="recordCategory" placeholder="food, salary, transport, etc.">
+      </div>
+
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="recordDate">
+      </div>
+
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <textarea id="recordNotes" rows="3" placeholder="Additional notes..."></textarea>
+      </div>
+
+      <button onclick="createRecord()">Create Record</button>
+
+      <div id="recordResponse" class="response hidden"></div>
+    </div>
+
+    <!-- View Records Section -->
+    <div class="section hidden" id="viewRecordsSection">
+      <h2>View Records</h2>
+
+      <div class="form-group">
+        <label>Filter by Type</label>
+        <select id="filterType">
+          <option value="">All</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Filter by Category</label>
+        <input type="text" id="filterCategory" placeholder="food, salary, etc.">
+      </div>
+
+      <div class="form-group">
+        <label>Min Amount</label>
+        <input type="number" id="filterMinAmount" placeholder="0" step="0.01">
+      </div>
+
+      <div class="form-group">
+        <label>Max Amount</label>
+        <input type="number" id="filterMaxAmount" placeholder="1000" step="0.01">
+      </div>
+
+      <button onclick="getRecords()">Get Records</button>
+      <button onclick="clearFilters()" class="secondary">Clear Filters</button>
+
+      <div id="recordsDisplay" class="response hidden"></div>
+    </div>
+
+    <!-- Budget Section -->
+    <div class="section hidden" id="budgetSection">
+      <h2>Budget Management</h2>
+
+      <h3>Create Budget</h3>
+      <div class="form-group">
+        <label>Category</label>
+        <input type="text" id="budgetCategory" placeholder="food">
+      </div>
+
+      <div class="form-group">
+        <label>Limit Amount</label>
+        <input type="number" id="budgetLimit" placeholder="500" step="0.01">
+      </div>
+
+      <div class="form-group">
+        <label>Month</label>
+        <input type="number" id="budgetMonth" placeholder="1" min="1" max="12">
+      </div>
+
+      <div class="form-group">
+        <label>Year</label>
+        <input type="number" id="budgetYear" placeholder="2024" min="2000">
+      </div>
+
+      <button onclick="createBudget()">Create Budget</button>
+      <button onclick="getBudgetStatus()" class="secondary">Get Budget Status</button>
+
+      <div id="budgetResponse" class="response hidden"></div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div class="section hidden" id="dashboardSection">
+      <h2>Dashboard Summary</h2>
+      <button onclick="getDashboard()">Load Dashboard</button>
+      <div id="dashboardDisplay" class="response hidden"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api/v1';
+
+    // Set today's date as default
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('recordDate').value = today;
+      
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      document.getElementById('budgetMonth').value = currentMonth;
+      document.getElementById('budgetYear').value = currentYear;
+
+      checkAuthStatus();
+    });
+
+    function checkAuthStatus() {
+      const token = localStorage.getItem('token');
+      const authStatus = document.getElementById('authStatus');
+      const recordSection = document.getElementById('recordSection');
+      const viewRecordsSection = document.getElementById('viewRecordsSection');
+      const budgetSection = document.getElementById('budgetSection');
+      const dashboardSection = document.getElementById('dashboardSection');
+
+      if (token) {
+        authStatus.textContent = 'Logged In ✓';
+        authStatus.className = 'auth-status logged-in';
+        recordSection.classList.remove('hidden');
+        viewRecordsSection.classList.remove('hidden');
+        budgetSection.classList.remove('hidden');
+        dashboardSection.classList.remove('hidden');
+      } else {
+        authStatus.textContent = 'Not Logged In';
+        authStatus.className = 'auth-status logged-out';
+        recordSection.classList.add('hidden');
+        viewRecordsSection.classList.add('hidden');
+        budgetSection.classList.add('hidden');
+        dashboardSection.classList.add('hidden');
+      }
+    }
+
+    function showResponse(elementId, data, isError = false) {
+      const element = document.getElementById(elementId);
+      element.textContent = JSON.stringify(data, null, 2);
+      element.classList.remove('hidden', 'error', 'success');
+      element.classList.add(isError ? 'error' : 'success');
+    }
+
+    async function register() {
+      const name = document.getElementById('authName').value;
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, role: 'user' })
+        });
+
+        const data = await response.json();
+        showResponse('authResponse', data, !response.ok);
+
+        if (response.ok && data.data.token) {
+          localStorage.setItem('token', data.data.token);
+          checkAuthStatus();
+        }
+      } catch (error) {
+        showResponse('authResponse', { error: error.message }, true);
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        showResponse('authResponse', data, !response.ok);
+
+        if (response.ok && data.data.token) {
+          localStorage.setItem('token', data.data.token);
+          checkAuthStatus();
+        }
+      } catch (error) {
+        showResponse('authResponse', { error: error.message }, true);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      checkAuthStatus();
+      showResponse('authResponse', { message: 'Logged out successfully' });
+    }
+
+    async function createRecord() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showResponse('recordResponse', { error: 'Please login first' }, true);
+        return;
+      }
+
+      const amount = parseFloat(document.getElementById('recordAmount').value);
+      const type = document.getElementById('recordType').value;
+      const category = document.getElementById('recordCategory').value;
+      const date = document.getElementById('recordDate').value;
+      const notes = document.getElementById('recordNotes').value;
+
+      try {
+        const response = await fetch(`${API_BASE}/records`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ amount, type, category, date, notes })
+        });
+
+        const data = await response.json();
+        showResponse('recordResponse', data, !response.ok);
+
+        if (response.ok) {
+          // Clear form
+          document.getElementById('recordAmount').value = '';
+          document.getElementById('recordCategory').value = '';
+          document.getElementById('recordNotes').value = '';
+        }
+      } catch (error) {
+        showResponse('recordResponse', { error: error.message }, true);
+      }
+    }
+
+    async function getRecords() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showResponse('recordsDisplay', { error: 'Please login first' }, true);
+        return;
+      }
+
+      const type = document.getElementById('filterType').value;
+      const category = document.getElementById('filterCategory').value;
+      const minAmount = document.getElementById('filterMinAmount').value;
+      const maxAmount = document.getElementById('filterMaxAmount').value;
+
+      let url = `${API_BASE}/records?`;
+      if (type) url += `type=${type}&`;
+      if (category) url += `category=${category}&`;
+      if (minAmount) url += `minAmount=${minAmount}&`;
+      if (maxAmount) url += `maxAmount=${maxAmount}&`;
+
+      try {
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.data.records) {
+          displayRecords(data.data.records);
+        } else {
+          showResponse('recordsDisplay', data, !response.ok);
+        }
+      } catch (error) {
+        showResponse('recordsDisplay', { error: error.message }, true);
+      }
+    }
+
+    function displayRecords(records) {
+      const display = document.getElementById('recordsDisplay');
+      display.classList.remove('hidden', 'error', 'success');
+      
+      if (records.length === 0) {
+        display.innerHTML = '<p>No records found</p>';
+        return;
+      }
+
+      let html = '<div class="grid">';
+      records.forEach(record => {
+        html += `
+          <div class="record-item ${record.type}">
+            <strong>${record.type.toUpperCase()}</strong>: $${record.amount}<br>
+            Category: ${record.category}<br>
+            Date: ${new Date(record.date).toLocaleDateString()}<br>
+            ${record.notes ? `Notes: ${record.notes}<br>` : ''}
+          </div>
+        `;
+      });
+      html += '</div>';
+      display.innerHTML = html;
+    }
+
+    function clearFilters() {
+      document.getElementById('filterType').value = '';
+      document.getElementById('filterCategory').value = '';
+      document.getElementById('filterMinAmount').value = '';
+      document.getElementById('filterMaxAmount').value = '';
+    }
+
+    async function createBudget() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showResponse('budgetResponse', { error: 'Please login first' }, true);
+        return;
+      }
+
+      const category = document.getElementById('budgetCategory').value;
+      const limitAmount = parseFloat(document.getElementById('budgetLimit').value);
+      const month = parseInt(document.getElementById('budgetMonth').value);
+      const year = parseInt(document.getElementById('budgetYear').value);
+
+      try {
+        const response = await fetch(`${API_BASE}/budgets`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ category, limitAmount, month, year })
+        });
+
+        const data = await response.json();
+        showResponse('budgetResponse', data, !response.ok);
+
+        if (response.ok) {
+          document.getElementById('budgetCategory').value = '';
+          document.getElementById('budgetLimit').value = '';
+        }
+      } catch (error) {
+        showResponse('budgetResponse', { error: error.message }, true);
+      }
+    }
+
+    async function getBudgetStatus() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showResponse('budgetResponse', { error: 'Please login first' }, true);
+        return;
+      }
+
+      const month = document.getElementById('budgetMonth').value;
+      const year = document.getElementById('budgetYear').value;
+
+      let url = `${API_BASE}/budgets/status?`;
+      if (month) url += `month=${month}&`;
+      if (year) url += `year=${year}`;
+
+      try {
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.data.budgets) {
+          displayBudgets(data.data.budgets);
+        } else {
+          showResponse('budgetResponse', data, !response.ok);
+        }
+      } catch (error) {
+        showResponse('budgetResponse', { error: error.message }, true);
+      }
+    }
+
+    function displayBudgets(budgets) {
+      const display = document.getElementById('budgetResponse');
+      display.classList.remove('hidden', 'error', 'success');
+      
+      if (budgets.length === 0) {
+        display.innerHTML = '<p>No budgets found</p>';
+        return;
+      }
+
+      let html = '';
+      budgets.forEach(budget => {
+        const statusClass = budget.status.toLowerCase();
+        html += `
+          <div class="budget-item ${statusClass}">
+            <strong>${budget.category}</strong> (${budget.month}/${budget.year})<br>
+            Budget: $${budget.budgetAmount} | Spent: $${budget.actualSpent}<br>
+            Usage: ${budget.percentageUsed}% | Status: <strong>${budget.status}</strong>
+          </div>
+        `;
+      });
+      display.innerHTML = html;
+    }
+
+    async function getDashboard() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showResponse('dashboardDisplay', { error: 'Please login first' }, true);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/analytics/summary`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        showResponse('dashboardDisplay', data, !response.ok);
+      } catch (error) {
+        showResponse('dashboardDisplay', { error: error.message }, true);
+      }
+    }
+  </script>
+</body>
+</html>
