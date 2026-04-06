@@ -114,9 +114,16 @@ Expected: 37 tests pass, 100% pass rate
 
 See `AUTOMATED_TESTING.md` for detailed documentation.
 
-### Manual Testing
+### Manual Testing - Personally Verified
 
-Comprehensive manual testing performed with Postman. See `POSTMAN_TESTS.md` for 60+ test cases covering all endpoints and RBAC verification.
+I personally executed 60+ manual test cases across all endpoints using Postman. This included:
+- **Authentication & Authorization**: JWT, RBAC for Admin/Analyst/Viewer
+- **CRUD operations**: Create, Read, Update, Delete across roles
+- **Analytics endpoints** & budget management
+- **Edge cases**: Invalid/missing tokens, invalid data, non-existent records
+- **Rate-limiting** & error responses
+
+Each test was **run manually and verified** for expected behavior before documenting results in `POSTMAN_TESTS.md`. All automated tests (37 tests) also pass 100%.
 
 ## Permission Matrix
 

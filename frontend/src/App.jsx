@@ -7,14 +7,24 @@ import './App.css';
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setDarkMode(savedTheme === 'dark');
+    }
     if (token) {
       setIsAuthenticated(true);
       setCurrentPage('dashboard');
     }
   }, []);
+
+  useEffect(() => {
+    document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -27,8 +37,12 @@ function App() {
     setCurrentPage('login');
   };
 
+  const toggleTheme = () => {
+    setDarkMode(!darkMode);
+  };
+
   if (isAuthenticated && currentPage === 'dashboard') {
-    return <Dashboard onLogout={handleLogout} />;
+    return <Dashboard onLogout={handleLogout} darkMode={darkMode} toggleTheme={toggleTheme} />;
   }
 
   if (currentPage === 'register') {

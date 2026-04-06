@@ -14,9 +14,15 @@ function AddRecordForm({ onRecordAdded }) {
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    // Capitalize first letter of category
+    const processedValue = name === 'category' 
+      ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+      : value;
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: processedValue,
     });
   };
 

@@ -294,139 +294,74 @@ class AnalyticsService {
    */
   async getAIInsights(userId) {
     const insights = [];
-
-    // Get current month and previous month date ranges
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-    // Get current and previous month summaries
-    const [currentMonth, previousMonth, topSpending, allTimeData] = await Promise.all([
+    // Get all-time category breakdown (same as the chart) and current month data
+    const [currentMonth, previousMonth, categoryBreakdown] = await Promise.all([
       this.getDashboardSummary(userId, currentMonthStart.toISOString(), currentMonthEnd.toISOString()),
       this.getDashboardSummary(userId, previousMonthStart.toISOString(), previousMonthEnd.toISOString()),
-      this.getTopSpendingInsight(userId, currentMonthStart.toISOString(), currentMonthEnd.toISOString()),
-      this.getDashboardSummary(userId)
+      this.getCategoryBreakdown(userId, 'expense') // NO DATE FILTER - all time data like the chart
     ]);
 
-    // Insight 1: Month-over-month expense comparison
-    if (previousMonth.totalExpenses > 0) {
-      const expenseChange = ((currentMonth.totalExpenses - previousMonth.totalExpenses) / previousMonth.totalExpenses) * 100;
-      
-      if (Math.abs(expenseChange) > 5) {
-        insights.push({
-          type: expenseChange > 0 ? 'warning' : 'success',
-          message: `Your expenses ${expenseChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(expenseChange).toFixed(1)}% compared to last month`,
-          value: expenseChange
-        });
-      }
-    }
+    const totalExpenses = categoryBreakdown.reduce((sum, cat) => sum + cat.total, 0);
+    const categoriesWithPercentage = categoryBreakdown.map(cat => ({
+      ...cat,
+      percentage: totalExpenses > 0 ? Math.round((cat.total / totalExpenses) * 100) : 0
+    })).sort((a, b) => b.total - a.total);
 
-    // Insight 2: Top spending category
-    if (topSpending.topCategories.length > 0) {
-      const topCategory = topSpending.topCategories[0];
+    if (categoriesWithPercentage.length > 0) {
+      const topCategory = categoriesWithPercentage[0];
       insights.push({
         type: 'info',
-        message: `Top spending category is ${topCategory.category} (${topCategory.percentageOfTotal}% of expenses)`,
-        value: topCategory.percentageOfTotal
+        message: `${topCategory.category}: ${topCategory.percentage}% of expenses (₹${topCategory.total.toLocaleString('en-IN')})`
       });
     }
 
-    // Insight 3: Savings rate
+    if (categoriesWithPercentage.length > 1) {
+      const secondCategory = categoriesWithPercentage[1];
+      insights.push({
+        type: 'info',
+        message: `${secondCategory.category}: ${secondCategory.percentage}% of expenses (₹${secondCategory.total.toLocaleString('en-IN')})`
+      });
+    }
+
     if (currentMonth.totalIncome > 0) {
       const savingsRate = ((currentMonth.netBalance / currentMonth.totalIncome) * 100);
-      
       if (savingsRate > 0) {
         insights.push({
           type: savingsRate > 20 ? 'success' : 'info',
-          message: `You are saving ${savingsRate.toFixed(1)}% of your income this month`,
-          value: savingsRate
+          message: `Saving ${savingsRate.toFixed(0)}% of income this month`
         });
       } else {
         insights.push({
           type: 'warning',
-          message: `You are spending more than you earn this month (${Math.abs(savingsRate).toFixed(1)}% deficit)`,
-          value: savingsRate
+          message: `Spending ${Math.abs(savingsRate).toFixed(0)}% more than income`
         });
       }
     }
 
-    // Insight 4: Average daily spending
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const currentDay = now.getDate();
-    
-    if (currentMonth.totalExpenses > 0 && currentDay > 0) {
-      const avgDailySpending = currentMonth.totalExpenses / currentDay;
-      const projectedMonthlySpending = avgDailySpending * daysInMonth;
-      
-      insights.push({
-        type: 'info',
-        message: `Your average daily spending is $${avgDailySpending.toFixed(2)}`,
-        value: avgDailySpending
-      });
-
-      // Projected spending warning
-      if (previousMonth.totalExpenses > 0 && projectedMonthlySpending > previousMonth.totalExpenses * 1.1) {
+    if (previousMonth.totalExpenses > 0 && currentMonth.totalExpenses > 0) {
+      const expenseChange = ((currentMonth.totalExpenses - previousMonth.totalExpenses) / previousMonth.totalExpenses) * 100;
+      if (Math.abs(expenseChange) > 10) {
         insights.push({
-          type: 'warning',
-          message: `At current rate, you'll spend ${((projectedMonthlySpending / previousMonth.totalExpenses - 1) * 100).toFixed(0)}% more than last month`,
-          value: projectedMonthlySpending
+          type: expenseChange > 0 ? 'warning' : 'success',
+          message: `Expenses ${expenseChange > 0 ? '↑' : '↓'} ${Math.abs(expenseChange).toFixed(0)}% vs last month`
         });
       }
     }
 
-    // Insight 5: Income trend
-    if (previousMonth.totalIncome > 0 && currentMonth.totalIncome > 0) {
-      const incomeChange = ((currentMonth.totalIncome - previousMonth.totalIncome) / previousMonth.totalIncome) * 100;
-      
-      if (Math.abs(incomeChange) > 5) {
-        insights.push({
-          type: incomeChange > 0 ? 'success' : 'warning',
-          message: `Your income ${incomeChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(incomeChange).toFixed(1)}% this month`,
-          value: incomeChange
-        });
-      }
-    }
-
-    // Insight 6: Spending consistency
-    if (topSpending.topCategories.length >= 3) {
-      const top3Total = topSpending.topCategories.slice(0, 3).reduce((sum, cat) => sum + cat.totalSpent, 0);
-      const top3Percentage = (top3Total / currentMonth.totalExpenses) * 100;
-      
-      if (top3Percentage > 70) {
-        insights.push({
-          type: 'info',
-          message: `${top3Percentage.toFixed(0)}% of your spending is concentrated in 3 categories`,
-          value: top3Percentage
-        });
-      }
-    }
-
-    // Insight 7: No data warning
     if (currentMonth.totalExpenses === 0 && currentMonth.totalIncome === 0) {
       insights.push({
         type: 'info',
-        message: 'No transactions recorded this month. Start tracking your finances!',
-        value: 0
+        message: 'No transactions this month. Start tracking!'
       });
     }
 
-    // Insight 8: Overall financial health
-    if (allTimeData.netBalance > 0 && allTimeData.totalIncome > 0) {
-      const overallSavingsRate = (allTimeData.netBalance / allTimeData.totalIncome) * 100;
-      
-      if (overallSavingsRate > 15) {
-        insights.push({
-          type: 'success',
-          message: `Great job! Your overall savings rate is ${overallSavingsRate.toFixed(1)}%`,
-          value: overallSavingsRate
-        });
-      }
-    }
-
-    return insights;
+    return insights.slice(0, 4);
   }
 
   // Helper methods

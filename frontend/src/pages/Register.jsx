@@ -6,6 +6,7 @@ function Register({ onSwitch }) {
     name: '',
     email: '',
     password: '',
+    role: 'analyst', // Default role
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ function Register({ onSwitch }) {
     setLoading(true);
 
     try {
-      await authAPI.register({ ...formData, role: 'analyst' });
+      await authAPI.register(formData);
       setSuccess(true);
       setTimeout(() => {
         onSwitch();
@@ -85,6 +86,19 @@ function Register({ onSwitch }) {
               required
               minLength={6}
             />
+          </div>
+          <div className="form-group">
+            <label>Account Type</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              required
+            >
+              <option value="analyst">Analyst - Can create, view, and update records</option>
+              <option value="viewer">Viewer - Can only view records and analytics</option>
+              <option value="admin">Admin - Full access including delete</option>
+            </select>
           </div>
           <button type="submit" className="btn" disabled={loading}>
             {loading ? 'Registering...' : 'Register'}

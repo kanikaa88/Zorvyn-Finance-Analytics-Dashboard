@@ -3,6 +3,11 @@ const recordService = require('../services/recordService');
 class RecordController {
   async createRecord(req, res, next) {
     try {
+      // Normalize category: capitalize first letter
+      if (req.body.category) {
+        req.body.category = req.body.category.charAt(0).toUpperCase() + req.body.category.slice(1).toLowerCase();
+      }
+      
       const record = await recordService.createRecord(req.user._id, req.body);
       
       res.status(201).json({
@@ -16,9 +21,15 @@ class RecordController {
 
   async getRecords(req, res, next) {
     try {
+      // Normalize category filter: capitalize first letter
+      let category = req.query.category;
+      if (category) {
+        category = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      }
+      
       const filters = {
         type: req.query.type,
-        category: req.query.category,
+        category: category,
         startDate: req.query.startDate,
         endDate: req.query.endDate,
         minAmount: req.query.minAmount,
@@ -59,6 +70,11 @@ class RecordController {
 
   async updateRecord(req, res, next) {
     try {
+      // Normalize category: capitalize first letter
+      if (req.body.category) {
+        req.body.category = req.body.category.charAt(0).toUpperCase() + req.body.category.slice(1).toLowerCase();
+      }
+      
       const record = await recordService.updateRecord(
         req.user._id,
         req.params.id,
